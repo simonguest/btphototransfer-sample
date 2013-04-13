@@ -6,39 +6,43 @@ import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.UUID;
 
 class ServerThread extends Thread {
-    private final BluetoothServerSocket btServerSocket;
-    private String TAG = "BTPHOTO/ServerThread";
+    private final String TAG = "BTPHOTO/ServerThread";
+    private final BluetoothServerSocket serverSocket;
     private Handler imageDisplayHandler;
 
-    public ServerThread(BluetoothAdapter btAdapter, String name, UUID uuid, Handler imageDisplayHandler) {
-
+    public ServerThread(BluetoothAdapter adapter, String name, UUID uuid, Handler imageDisplayHandler) {
         this.imageDisplayHandler = imageDisplayHandler;
-        BluetoothServerSocket tmp = null;
+        BluetoothServerSocket tempSocket = null;
         try {
-            Log.d(TAG, "Setting up temp bt adapter with "+name+" "+uuid.toString());
-            tmp = btAdapter.listenUsingInsecureRfcommWithServiceRecord(name, uuid);
-        } catch (Exception e) {
-            Log.d(TAG, e.toString());
+            tempSocket = adapter.listenUsingInsecureRfcommWithServiceRecord(name, uuid);
+        } catch (IOException ioe) {
+            Log.e(TAG, ioe.toString());
         }
-        btServerSocket = tmp;
+        serverSocket = tempSocket;
     }
 
     public void run() {
-        BluetoothSocket btSocket = null;
+        BluetoothSocket socket = null;
         while (true) {
             try {
-                Log.d(TAG, "Opening new server socket");
-                btSocket = btServerSocket.accept();
-                Log.d(TAG, "Got connection from client.  Spawning new server thread.");
-                // spawn into new thread at this point
-                ImageTransferThread imageTransferThread = new ImageTransferThread(btSocket, imageDisplayHandler);
-                imageTransferThread.start();
+                Log.v(TAG, "Opening new server socket");
+                socket = serverSocket.accept();
 
-            } catch (Exception e) {
-                Log.d(TAG, e.toString());
+                try {
+                    Log.v(TAG, "Got connection from client.  Spawning new image transfer thread.");
+                    ImageTransferThread imageTransferThread = new ImageTransferThread(socket, imageDisplayHandler);
+                    imageTransferThread.start();
+                } catch (Exception e) {
+                    Log.e(TAG, e.toString());
+                }
+
+            } catch (IOException ioe) {
+                // Suppress the exception (socket was likely closed by activity change)
+                Log.v(TAG, "Server socket was closed - likely due to activity change");
                 break;
             }
         }
@@ -46,10 +50,10 @@ class ServerThread extends Thread {
 
     public void cancel() {
         try {
-            Log.d(TAG, "Trying to close the server socket");
-            btServerSocket.close();
+            Log.v(TAG, "Trying to close the server socket");
+            serverSocket.close();
         } catch (Exception e) {
-            Log.d(TAG, e.toString());
+            Log.e(TAG, e.toString());
         }
     }
 }

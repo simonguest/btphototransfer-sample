@@ -1,11 +1,12 @@
 package com.simonguest.BTPhotoTransfer;
 
 import android.util.Log;
+
 import java.security.MessageDigest;
 import java.util.Arrays;
 
 public class Utils {
-    private static String TAG = "BTPHOTO";
+    private final static String TAG = "BTPHOTO";
 
     public static byte[] intToByteArray(int a) {
         byte[] ret = new byte[4];
@@ -26,12 +27,11 @@ public class Utils {
 
     public static byte[] getImageDigest(byte[] imageData) {
         try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            return md.digest();
+            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            return messageDigest.digest();
         } catch (Exception ex) {
-            Log.d(TAG, ex.toString());
+            Log.e(TAG, ex.toString());
+            throw new UnsupportedOperationException("MD5 algorithm not available on this device.");
         }
-
-        return null;
     }
 }

@@ -20,9 +20,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class MainActivity extends Activity {
-
     private static final String TAG = "BTPHOTO/MainActivity";
-    private ArrayAdapter<DeviceData> deviceArrayAdapter;
     private Spinner deviceSpinner;
 
     @Override
@@ -30,13 +28,9 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        /***
-         * Setup the handlers
-         */
         MainApplication.imageDisplayHandler = new Handler() {
             @Override
             public void handleMessage(Message message) {
-                Log.d(TAG, "Image Display Handler");
                 BitmapFactory.Options options = new BitmapFactory.Options();
                 options.inSampleSize = 2;
                 Bitmap image = BitmapFactory.decodeByteArray(((byte[]) message.obj), 0, ((byte[]) message.obj).length, options);
@@ -50,9 +44,8 @@ public class MainActivity extends Activity {
         MainApplication.toastDisplayHandler = new Handler() {
             @Override
             public void handleMessage(Message message) {
-                Log.d(TAG, "Toast Display Handler");
                 if (message.obj != null) {
-                    Toast.makeText(MainActivity.this, ((String) message.obj), Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, ((String) message.obj), Toast.LENGTH_SHORT).show();
                 }
             }
         };
@@ -60,24 +53,20 @@ public class MainActivity extends Activity {
         MainApplication.imageCaptureHandler = new Handler() {
             @Override
             public void handleMessage(Message message) {
-                Log.d(TAG, "Image Capture Handler");
                 Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                File file = new File(Environment.getExternalStorageDirectory(), "test.jpg");
+                File file = new File(Environment.getExternalStorageDirectory(), Constants.IMAGE_FILE_NAME);
                 Uri outputFileUri = Uri.fromFile(file);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
-                startActivityForResult(takePictureIntent, MainApplication.PICTURE_RESULT);
+                startActivityForResult(takePictureIntent, Constants.PICTURE_RESULT_CODE);
             }
         };
 
-        /**
-         * Construct the rest of the UI
-         */
         ArrayList<DeviceData> deviceDataList = new ArrayList<DeviceData>();
         for (BluetoothDevice device : MainApplication.pairedDevices) {
             deviceDataList.add(new DeviceData(device.getName(), device.getAddress()));
         }
 
-        deviceArrayAdapter = new ArrayAdapter<DeviceData>(this, android.R.layout.simple_spinner_item, deviceDataList);
+        ArrayAdapter<DeviceData> deviceArrayAdapter = new ArrayAdapter<DeviceData>(this, android.R.layout.simple_spinner_item, deviceDataList);
         deviceArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
         deviceSpinner = (Spinner) findViewById(R.id.deviceSpinner);
         deviceSpinner.setAdapter(deviceArrayAdapter);
@@ -87,16 +76,13 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 DeviceData deviceData = (DeviceData) deviceSpinner.getSelectedItem();
-                for (BluetoothDevice device : MainApplication.btAdapter.getBondedDevices()) {
-                    Log.d(TAG, device.getAddress());
-                    Log.d(TAG, deviceData.getValue());
+                for (BluetoothDevice device : MainApplication.adapter.getBondedDevices()) {
                     if (device.getAddress().contains(deviceData.getValue())) {
-                        Log.d(TAG, "Starting client thread");
-                        if (MainApplication.clientThread != null)
-                        {
+                        Log.v(TAG, "Starting client thread");
+                        if (MainApplication.clientThread != null) {
                             MainApplication.clientThread.cancel();
                         }
-                        MainApplication.clientThread = new ClientThread(device, UUID.fromString(MainApplication.UUID_STRING), MainApplication.toastDisplayHandler, MainApplication.imageCaptureHandler);
+                        MainApplication.clientThread = new ClientThread(device, UUID.fromString(Constants.UUID_STRING), MainApplication.toastDisplayHandler, MainApplication.imageCaptureHandler);
                         MainApplication.clientThread.start();
                     }
                 }
@@ -107,26 +93,27 @@ public class MainActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        Log.v(TAG, "Stopping server thread.  No longer able to accept images.");
         MainApplication.serverThread.cancel();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        MainApplication.serverThread = new ServerThread(MainApplication.btAdapter, MainApplication.NAME, UUID.fromString(MainApplication.UUID_STRING), MainApplication.imageDisplayHandler);
+        Log.v(TAG, "Starting server thread.  Able to accept images.");
+        MainApplication.serverThread = new ServerThread(MainApplication.adapter, Constants.NAME, UUID.fromString(Constants.UUID_STRING), MainApplication.imageDisplayHandler);
         MainApplication.serverThread.start();
-        Log.d(TAG, "Server thread has started");
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == MainApplication.PICTURE_RESULT) {
+        if (requestCode == Constants.PICTURE_RESULT_CODE) {
             if (resultCode == RESULT_OK) {
-                Log.d(TAG, "Photo acquired from camera");
+                Log.v(TAG, "Photo acquired from camera intent");
                 try {
-                    File file = new File(Environment.getExternalStorageDirectory(), "test.jpg");
+                    File file = new File(Environment.getExternalStorageDirectory(), Constants.IMAGE_FILE_NAME);
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inSampleSize = 2;
                     Bitmap image = BitmapFactory.decodeFile(file.getAbsolutePath(), options);
@@ -147,17 +134,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    /**
-     * DeviceData used for spinner control on Activity
-     */
     class DeviceData {
         public DeviceData(String spinnerText, String value) {
             this.spinnerText = spinnerText;
             this.value = value;
-        }
-
-        public String getSpinnerText() {
-            return spinnerText;
         }
 
         public String getValue() {
