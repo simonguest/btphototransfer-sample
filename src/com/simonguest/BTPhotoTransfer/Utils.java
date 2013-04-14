@@ -6,7 +6,7 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 
 public class Utils {
-    private final static String TAG = "BTPHOTO";
+    private final static String TAG = "BTPHOTO/Utils";
 
     public static byte[] intToByteArray(int a) {
         byte[] ret = new byte[4];
