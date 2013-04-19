@@ -4,27 +4,24 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
         >
-    <TextView
+    <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Select Paired Device"
-            android:id="@+id/textView" android:layout_gravity="left|center_vertical"/>
-    <Spinner
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/deviceSpinner" android:layout_gravity="left|center_vertical"/>
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Send Photo"
-            android:id="@+id/clientButton" android:layout_gravity="left|center_vertical"/>
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/statusView" android:layout_gravity="left|center_vertical"/>
+            android:layout_height="wrap_content" android:layout_gravity="center">
+        <Spinner
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/deviceSpinner" android:layout_gravity="center"
+                android:spinnerMode="dialog"/>
+        <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send Photo"
+                android:id="@+id/clientButton" android:layout_gravity="center"/>
+    </LinearLayout>
     <ImageView
-            android:layout_width="300px"
-            android:layout_height="300px"
-            android:id="@+id/imageView" android:layout_gravity="left|center_vertical"/>
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/imageView" android:layout_gravity="center_vertical|left"/>
 </LinearLayout>
 
